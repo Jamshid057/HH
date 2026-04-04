@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token as google_id_token
 from rest_framework import serializers
@@ -22,7 +23,10 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs['password'] != attrs['conf_password']:
             raise serializers.ValidationError({'password': 'Parollar mos kelmadi.'})
-        validate_password(attrs['password'])
+        try:
+            validate_password(attrs['password'])
+        except DjangoValidationError as e:
+            raise serializers.ValidationError({'password': list(e.messages)})
         return attrs
 
     def create(self, validated_data):

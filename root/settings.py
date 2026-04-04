@@ -1,5 +1,9 @@
+import os
+import certifi
 from pathlib import Path
 from datetime import timedelta
+
+os.environ.setdefault('SSL_CERT_FILE', certifi.where())
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -69,7 +73,7 @@ DATABASES = {
         "USER": "postgres",
         "PASSWORD": "1",
         "HOST": "localhost",
-        "PORT": "5433",
+        "PORT": "5432",
     }
 }
 AUTH_PASSWORD_VALIDATORS = [
@@ -117,7 +121,7 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@hh.uz'
 FRONTEND_URL = 'http://localhost:3000'
 
@@ -144,4 +148,9 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS = True
 
 # Google OAuth
-GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'
+GOOGLE_CLIENT_ID = '993415015105-c34iaiopcig9kdc7eufqc3kch1vqnht6.apps.googleusercontent.com'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'irisbayevjamshid@gmail.com'
+EMAIL_HOST_PASSWORD = 'rzqcybfbuxzuhfcp'
+EMAIL_USE_TLS = True

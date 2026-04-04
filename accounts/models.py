@@ -32,7 +32,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     email = models.EmailField(unique=True)
 
-    birth_date = models.DateField()
+    birth_date = models.DateField(null=True, blank=True)
 
     date_joined = models.DateTimeField(auto_now_add=True)
 
