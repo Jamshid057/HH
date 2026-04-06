@@ -83,6 +83,17 @@ class CandidateDashboardView(APIView):
 class CandidateProfileUpdateView(APIView):
     permission_classes = (IsCandidate,)
 
+    @extend_schema(summary='O\'z profilini ko\'rish', responses=CandidateDetailSerializer)
+    def get(self, request):
+        try:
+            profile = CandidateProfile.objects.select_related('user', 'nationality').prefetch_related(
+                'educations', 'user__social_links__social'
+            ).get(user=request.user)
+        except CandidateProfile.DoesNotExist:
+            return Response({'detail': 'Profil topilmadi.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CandidateDetailSerializer(profile)
+        return Response(serializer.data)
+
     @extend_schema(summary='Profilni to\'liq yangilash', request=CandidateUpdateSerializer)
     def put(self, request):
         profile, _ = CandidateProfile.objects.get_or_create(user=request.user)
