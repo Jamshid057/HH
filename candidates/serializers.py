@@ -42,7 +42,7 @@ class CandidateListSerializer(serializers.ModelSerializer):
     class Meta:
         model = CandidateProfile
         fields = (
-            'id', 'fullname', 'title_headline', 'experience',
+            'id', 'user_id', 'fullname', 'title_headline', 'experience',
             'profile_photo', 'educations',
         )
 
@@ -62,7 +62,7 @@ class CandidateDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = CandidateProfile
         fields = (
-            'id', 'fullname', 'title_headline', 'experience',
+            'id', 'user_id', 'fullname', 'title_headline', 'experience',
             'personal_web', 'profile_photo', 'nationality',
             'date_of_birth', 'gender', 'marital_status',
             'biography', 'location', 'phone_number', 'email',
@@ -208,3 +208,9 @@ class ChangePasswordSerializer(serializers.Serializer):
         user = self.context['request'].user
         user.set_password(self.validated_data['new_password'])
         user.save()
+
+
+class ResumeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Resume
+        fields = ('id', 'name', 'file')

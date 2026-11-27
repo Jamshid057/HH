@@ -14,6 +14,8 @@ from companies.views import (
     SavedCandidateListView,
     SavedCandidateToggleView,
     CompanyChangePasswordView,
+    JobApplicationListView,
+    JobApplicationStatusView,
 )
 
 urlpatterns = [
@@ -28,6 +30,8 @@ urlpatterns = [
     path('dashboard/', CompanyDashboardView.as_view(), name='company-dashboard'),
     path('jobs/', CompanyJobsView.as_view(), name='company-jobs'),
     path('jobs/<int:job_pk>/applicant/<int:candidate_pk>/', CompanyJobApplicantView.as_view(), name='company-applicant'),
+    path('jobs/<int:job_pk>/applications/', JobApplicationListView.as_view(), name='job-applications'),
+    path('jobs/<int:job_pk>/applications/<int:apply_pk>/', JobApplicationStatusView.as_view(), name='job-application-status'),
     path('wishlist/', SavedCandidateListView.as_view(), name='saved-candidates'),
     path('wishlist/<int:candidate_pk>/', SavedCandidateToggleView.as_view(), name='saved-candidate-toggle'),
     path('change-password/', CompanyChangePasswordView.as_view(), name='company-change-password'),

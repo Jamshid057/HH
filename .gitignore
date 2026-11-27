@@ -8,9 +8,17 @@ wheels/
 
 # Virtual environments
 .venv
-frontend/
 .claude
 .idea
 TODO.txt
 api-todo.txt
 db_models.png
+
+# Secrets and local data
+.env
+.env.*
+!.env.example
+db.sqlite3
+media/
+.DS_Store
+static/

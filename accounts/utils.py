@@ -56,7 +56,7 @@ def delete_reset_token(token: str) -> None:
 
 def send_otp_email(email: str, otp: str) -> None:
     send_mail(
-        subject='Email tasdiqlash kodi — HH',
+        subject='Email tasdiqlash kodi — MyJob',
         message=(
             f'Sizning tasdiqlash kodingiz: {otp}\n\n'
             f'Kod {settings.OTP_EXPIRE_SECONDS // 60} daqiqa davomida amal qiladi.\n'
@@ -71,7 +71,7 @@ def send_otp_email(email: str, otp: str) -> None:
 def send_reset_link_email(email: str, token: str) -> None:
     reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
     send_mail(
-        subject='Parolni tiklash — HH',
+        subject='Parolni tiklash — MyJob',
         message=(
             f'Parolni tiklash uchun quyidagi havolani bosing:\n\n'
             f'{reset_url}\n\n'

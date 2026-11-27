@@ -1,11 +1,11 @@
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 from rest_framework import status
-from rest_framework.generics import ListAPIView, RetrieveAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveAPIView, DestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from candidates.models import CandidateProfile, Apply, CandidateWishlist
+from candidates.models import Resume, CandidateProfile, Apply, CandidateWishlist
 from candidates.permissions import IsCandidate, IsEmployerOrAdmin
 from candidates.serializers import (
     CandidateListSerializer,
@@ -16,6 +16,7 @@ from candidates.serializers import (
     ApplyCreateSerializer,
     WishlistSerializer,
     ChangePasswordSerializer,
+    ResumeSerializer,
 )
 
 
@@ -38,7 +39,7 @@ class BrowseCandidateView(ListAPIView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        qs = CandidateProfile.objects.select_related('user', 'nationality').prefetch_related('educations')
+        qs = CandidateProfile.objects.select_related('user', 'nationality').prefetch_related('educations').order_by('-id')
         params = self.request.query_params
         if experience := params.get('experience'):
             qs = qs.filter(experience=experience)
@@ -191,3 +192,25 @@ class CandidateChangePasswordView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'message': 'Parol muvaffaqiyatli o\'zgartirildi.'})
+
+
+@extend_schema(tags=['Candidates — Resumes'])
+class ResumeListCreateView(ListCreateAPIView):
+    serializer_class = ResumeSerializer
+    permission_classes = (IsCandidate,)
+    pagination_class = None
+
+    def get_queryset(self):
+        return Resume.objects.filter(user=self.request.user).order_by('-id')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+@extend_schema(tags=['Candidates — Resumes'])
+class ResumeDeleteView(DestroyAPIView):
+    serializer_class = ResumeSerializer
+    permission_classes = (IsCandidate,)
+
+    def get_queryset(self):
+        return Resume.objects.filter(user=self.request.user)

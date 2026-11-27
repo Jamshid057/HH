@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -150,3 +151,49 @@ class ResetPasswordView(APIView):
         user.save()
         delete_reset_token(token)
         return Response({'message': 'Parol muvaffaqiyatli yangilandi.'})
+
+
+PREFERENCE_KEYS = {
+    'n_shortlisted', 'n_saved', 'n_expire', 'n_rejected', 'n_alerts',
+    'alert_role', 'alert_location', 'profile_public', 'resume_public',
+}
+
+
+@extend_schema(tags=['Auth'])
+class PreferencesView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(summary='Bildirishnoma va maxfiylik sozlamalari')
+    def get(self, request):
+        return Response(request.user.preferences or {})
+
+    @extend_schema(summary='Sozlamalarni yangilash (qisman)')
+    def patch(self, request):
+        data = {k: v for k, v in request.data.items() if k in PREFERENCE_KEYS}
+        request.user.preferences = {**(request.user.preferences or {}), **data}
+        request.user.save(update_fields=['preferences'])
+        return Response(request.user.preferences)
+
+
+@extend_schema(tags=['Auth'])
+class MeView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(summary="Akkauntni butunlay o'chirish")
+    def delete(self, request):
+        request.user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(summary='Joriy foydalanuvchi ma\'lumoti')
+    def get(self, request):
+        user = request.user
+        return Response({
+            'id': user.id,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'full_name': user.full_name,
+            'email': user.email,
+            'role': user.role,
+            'email_verified': user.email_verified,
+            'has_company': hasattr(user, 'company'),
+        })

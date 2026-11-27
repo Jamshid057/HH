@@ -1,4 +1,5 @@
 import os
+import sys
 import certifi
 from pathlib import Path
 from datetime import timedelta
@@ -8,13 +9,31 @@ os.environ.setdefault('SSL_CERT_FILE', certifi.where())
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-tj+a9w@=igjgmanznifw5ajxx6t)*i0urevgttjg=ei@jnslvh"
 
-DEBUG = True
+def _load_env(path):
+    """Read KEY=VALUE lines from a local .env file (never committed)."""
+    if not path.exists():
+        return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith('#') and '=' in line:
+            key, value = line.split('=', 1)
+            os.environ.setdefault(key.strip(), value.strip().strip('"\''))
+
+
+_load_env(BASE_DIR / '.env')
+
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('1', 'true', 'yes')
+
+SECRET_KEY = os.environ.get('SECRET_KEY', '')
+if not SECRET_KEY:
+    if not DEBUG:
+        raise RuntimeError('SECRET_KEY environment variable is required when DEBUG is off.')
+    SECRET_KEY = 'dev-only-insecure-key-change-me'
 
 AUTH_USER_MODEL = "accounts.CustomUser"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 
 INSTALLED_APPS = [
@@ -38,6 +57,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -66,16 +86,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "root.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "hh",
-        "USER": "postgres",
-        "PASSWORD": "1",
-        "HOST": "localhost",
-        "PORT": "5432",
+if os.environ.get('POSTGRES_DB'):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ['POSTGRES_DB'],
+            "USER": os.environ.get('POSTGRES_USER', 'postgres'),
+            "PASSWORD": os.environ.get('POSTGRES_PASSWORD', ''),
+            "HOST": os.environ.get('POSTGRES_HOST', 'localhost'),
+            "PORT": os.environ.get('POSTGRES_PORT', '5432'),
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -111,6 +139,8 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PAGINATION_CLASS": "root.pagination.StandardPagination",
+    "PAGE_SIZE": 12,
 }
 
 SPECTACULAR_SETTINGS = {
@@ -122,8 +152,8 @@ SPECTACULAR_SETTINGS = {
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-DEFAULT_FROM_EMAIL = 'noreply@hh.uz'
-FRONTEND_URL = 'http://localhost:3000'
+DEFAULT_FROM_EMAIL = 'noreply@myjob.uz'
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
 # Redis
 CACHES = {
@@ -145,12 +175,36 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+_cors = [o for o in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if o]
+CORS_ALLOWED_ORIGINS = _cors
+CORS_ALLOW_ALL_ORIGINS = not _cors  # open only when no explicit origins are configured
 
 # Google OAuth
-GOOGLE_CLIENT_ID = '993415015105-c34iaiopcig9kdc7eufqc3kch1vqnht6.apps.googleusercontent.com'
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
+
+# Email (Gmail SMTP). Without credentials, emails are printed to the console instead.
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'irisbayevjamshid@gmail.com'
-EMAIL_HOST_PASSWORD = 'rzqcybfbuxzuhfcp'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = True
+if not EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Redis URL can be overridden in deployment
+CACHES["default"]["LOCATION"] = os.environ.get('REDIS_URL', CACHES["default"]["LOCATION"])
+
+# Production hardening (only when DEBUG is off)
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o]
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+    }
+
+# Faster password hashing makes the test suite ~10x quicker
+if 'test' in sys.argv:
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']

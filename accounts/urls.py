@@ -9,6 +9,8 @@ from accounts.views import (
     ForgotPasswordView,
     ResetPasswordView,
     GoogleAuthView,
+    MeView,
+    PreferencesView,
 )
 
 urlpatterns = [
@@ -22,5 +24,7 @@ urlpatterns = [
     path('forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
     path('reset-password/', ResetPasswordView.as_view(), name='reset-password'),
 
+    path('me/', MeView.as_view(), name='me'),
+    path('preferences/', PreferencesView.as_view(), name='preferences'),
     path('google/', GoogleAuthView.as_view(), name='google-auth'),
 ]

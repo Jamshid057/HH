@@ -11,13 +11,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         EMPLOYER = 'employer', 'Employer'
         CANDIDATE = 'candidate', 'Candidate'
 
-    role = models.CharField(max_length=20, choices=Role.choices, default=Role.CANDIDATE) # noqa
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.CANDIDATE)
 
     class Gender(models.TextChoices):
         MALE = 'male', 'Male'
         FEMALE = 'female', 'Female'
         OTHER = 'other', 'Other'
-    gender = models.CharField(max_length=20, choices=Gender.choices, default=Gender.MALE) # noqa
+    gender = models.CharField(max_length=20, choices=Gender.choices, default=Gender.MALE)
 
     class MaritalStatus(models.TextChoices):
         SINGLE = "single", "Single"
@@ -25,7 +25,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         DIVORCED = "divorced", "Divorced"
         WIDOWED = "widowed", "Widowed"
 
-    marital_status = models.CharField(max_length=20, choices=MaritalStatus.choices, default=MaritalStatus.SINGLE) # noqa
+    marital_status = models.CharField(max_length=20, choices=MaritalStatus.choices, default=MaritalStatus.SINGLE)
 
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -39,13 +39,14 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     email_verified = models.BooleanField(default=False)
+    preferences = models.JSONField(default=dict, blank=True)
 
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name', 'birth_date']
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'birth_date'] #noqa
 
-    class Meta:
+    class Meta: # type: ignore[reportIncompatibleVariableOverride]
         db_table = 'user'
         verbose_name = 'user'
         verbose_name_plural = 'users'

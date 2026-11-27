@@ -111,3 +111,11 @@ class JobAlertSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobAlert
         fields = ('id', 'job_id', 'title', 'company_name', 'company_logo', 'alerted_at')
+
+
+class JobManageSerializer(serializers.ModelSerializer):
+    """Faqat e'lon egasi o'zgartira oladigan maydonlar: reklama turi va holati."""
+
+    class Meta:
+        model = Job
+        fields = ('promote_type', 'status')

@@ -107,6 +107,7 @@ class CompanyJobSerializer(serializers.Serializer):
     type = serializers.CharField(read_only=True)
     status = serializers.CharField(read_only=True)
     expiration_date = serializers.DateField(read_only=True)
+    promote_type = serializers.CharField(read_only=True)
     apply_count = serializers.SerializerMethodField()
 
     def get_apply_count(self, obj):
@@ -190,3 +191,33 @@ class CompanyChangePasswordSerializer(serializers.Serializer):
         user = self.context['request'].user
         user.set_password(self.validated_data['new_password'])
         user.save()
+
+
+class ApplicationListSerializer(serializers.ModelSerializer):
+    fullname = serializers.CharField(source='user.full_name', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+    candidate_id = serializers.SerializerMethodField()
+    user_id = serializers.IntegerField(read_only=True)
+    cv = serializers.FileField(source='cv.file', read_only=True)
+    title_headline = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Apply
+        fields = (
+            'id', 'user_id', 'candidate_id', 'fullname', 'email', 'title_headline',
+            'cv', 'letter', 'status', 'applied_at',
+        )
+
+    def get_candidate_id(self, obj):
+        profile = getattr(obj.user, 'candidate_profile', None)
+        return profile.id if profile else None
+
+    def get_title_headline(self, obj):
+        profile = getattr(obj.user, 'candidate_profile', None)
+        return profile.title_headline if profile else ''
+
+
+class ApplicationStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Apply
+        fields = ('status',)

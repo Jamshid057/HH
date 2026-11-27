@@ -16,8 +16,10 @@ from companies.serializers import (
     ApplicantDetailSerializer,
     SavedCandidateSerializer,
     CompanyChangePasswordSerializer,
+    ApplicationListSerializer,
+    ApplicationStatusSerializer,
 )
-from candidates.models import CandidateProfile
+from candidates.models import CandidateProfile, Apply
 
 
 @extend_schema(tags=['Companies — Public'])
@@ -53,7 +55,7 @@ class CompanyListView(ListAPIView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        qs = Company.objects.select_related('country').prefetch_related('jobs')
+        qs = Company.objects.select_related('country').prefetch_related('jobs').order_by('-id')
         params = self.request.query_params
         if org_type := params.get('organization_type'):
             qs = qs.filter(organization_type=org_type)
@@ -241,3 +243,34 @@ class CompanyChangePasswordView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'message': 'Parol muvaffaqiyatli o\'zgartirildi.'})
+
+
+@extend_schema(tags=['Companies — Jobs'])
+class JobApplicationListView(ListAPIView):
+    serializer_class = ApplicationListSerializer
+    permission_classes = (IsCompanyOwner,)
+
+    @extend_schema(summary="Ish e'loniga kelgan arizalar ro'yxati")
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return Apply.objects.filter(
+            job_id=self.kwargs['job_pk'], job__company=self.request.user.company
+        ).select_related('user', 'user__candidate_profile', 'cv').order_by('-applied_at')
+
+
+@extend_schema(tags=['Companies — Jobs'])
+class JobApplicationStatusView(APIView):
+    permission_classes = (IsCompanyOwner,)
+
+    @extend_schema(summary="Ariza statusini o'zgartirish", request=ApplicationStatusSerializer)
+    def patch(self, request, job_pk, apply_pk):
+        try:
+            apply = Apply.objects.get(pk=apply_pk, job_id=job_pk, job__company=request.user.company)
+        except Apply.DoesNotExist:
+            return Response({'detail': 'Ariza topilmadi.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ApplicationStatusSerializer(apply, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)

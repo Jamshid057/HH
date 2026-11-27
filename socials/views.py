@@ -1,11 +1,12 @@
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.generics import ListAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from socials.models import SocialLink
-from socials.serializers import SocialLinkSerializer, SocialLinkCreateUpdateSerializer
+from socials.models import Social, SocialLink
+from socials.serializers import SocialLinkSerializer, SocialLinkCreateUpdateSerializer, SocialSerializer
 
 
 @extend_schema(tags=['Socials'])
@@ -64,3 +65,11 @@ class SocialLinkDetailView(APIView):
             return Response({'detail': 'Topilmadi.'}, status=status.HTTP_404_NOT_FOUND)
         link.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(tags=['Socials'])
+class SocialPlatformListView(ListAPIView):
+    queryset = Social.objects.order_by('name')
+    serializer_class = SocialSerializer
+    permission_classes = (AllowAny,)
+    pagination_class = None

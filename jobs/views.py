@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from jobs.models import Job, JobAlert
-from jobs.serializers import JobListSerializer, JobDetailSerializer, JobCreateSerializer, JobAlertSerializer
+from jobs.serializers import JobListSerializer, JobDetailSerializer, JobCreateSerializer, JobAlertSerializer, JobManageSerializer
 
 
 @extend_schema(tags=['Jobs'])
@@ -18,6 +18,8 @@ class JobListView(ListAPIView):
     @extend_schema(
         summary='Ish e\'lonlari ro\'yxati (filter bilan)',
         parameters=[
+            OpenApiParameter('job_role_id', int, description='Kategoriya (JobRole) ID'),
+            OpenApiParameter('company_id', int, description='Kompaniya ID'),
             OpenApiParameter('promote_type', str, description='featured, urgent, popular'),
             OpenApiParameter('latest', str, description='today, weekly, monthly, all'),
             OpenApiParameter('location', str, description='Shahar nomi'),
@@ -49,8 +51,10 @@ class JobListView(ListAPIView):
                 qs = qs.filter(created_at__date__gte=today - timezone.timedelta(days=7))
             elif latest == 'monthly':
                 qs = qs.filter(created_at__date__gte=today - timezone.timedelta(days=30))
-        if category_id := params.get('category_id'):
-            qs = qs.filter(education_id=category_id)
+        if job_role_id := params.get('job_role_id') or params.get('category_id'):
+            qs = qs.filter(job_role_id=job_role_id)
+        if company_id := params.get('company_id'):
+            qs = qs.filter(company_id=company_id)
         if location := params.get('location'):
             qs = qs.filter(company__location__icontains=location)
         if title := params.get('title'):
@@ -148,3 +152,25 @@ class JobAlertToggleView(APIView):
             alert.delete()
             return Response({'message': 'Alert o\'chirildi.'})
         return Response({'message': 'Alert qo\'shildi.'}, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(tags=['Jobs'])
+class JobManageView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(
+        summary="E'lonni targ'ib qilish (promote_type) yoki holatini o'zgartirish (masalan expired)",
+        request=JobManageSerializer,
+    )
+    def patch(self, request, pk):
+        company = getattr(request.user, 'company', None)
+        try:
+            job = Job.objects.get(pk=pk, company=company) if company else None
+        except Job.DoesNotExist:
+            job = None
+        if job is None:
+            return Response({'detail': "E'lon topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = JobManageSerializer(job, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)

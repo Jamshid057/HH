@@ -10,6 +10,8 @@ from candidates.views import (
     CandidateWishlistView,
     CandidateWishlistToggleView,
     CandidateChangePasswordView,
+    ResumeListCreateView,
+    ResumeDeleteView,
 )
 
 urlpatterns = [
@@ -21,5 +23,7 @@ urlpatterns = [
     path('apply/', CandidateApplyView.as_view(), name='candidate-apply'),
     path('wishlist/', CandidateWishlistView.as_view(), name='candidate-wishlist'),
     path('wishlist/<int:job_id>/', CandidateWishlistToggleView.as_view(), name='wishlist-toggle'),
+    path('resumes/', ResumeListCreateView.as_view(), name='resumes'),
+    path('resumes/<int:pk>/', ResumeDeleteView.as_view(), name='resume-delete'),
     path('change-password/', CandidateChangePasswordView.as_view(), name='change-password'),
 ]
