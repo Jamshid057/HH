@@ -39,7 +39,7 @@ jobs:
       SECRET_KEY: ci-only-not-a-secret
       DEBUG: "True"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: astral-sh/setup-uv@v6
         with:
@@ -75,7 +75,7 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # frontend/ is optional in this repository; skip cleanly when it is not committed
       - name: Detect frontend
@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
       - name: Build (no push)
         uses: docker/build-push-action@v7
